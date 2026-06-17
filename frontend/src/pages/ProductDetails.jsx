@@ -6,6 +6,7 @@ const ProductDetails = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const [product, setProduct] = useState(null);
+  const [mainImage, setMainImage] = useState(null);
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(true);
 
@@ -14,7 +15,11 @@ const ProductDetails = () => {
       try {
         const response = await api.get(`/products/${id}`);
         if (response.data.success) {
-          setProduct(response.data.data);
+          const prod = response.data.data;
+          setProduct(prod);
+          if (prod.images && prod.images.length > 0) {
+            setMainImage(prod.images[0].url);
+          }
         }
       } catch (err) {
         setError('Failed to load product details.');
@@ -50,13 +55,30 @@ const ProductDetails = () => {
       <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
         <div className="md:flex">
           {/* Product Image */}
-          <div className="md:w-1/2 bg-gray-50 flex items-center justify-center p-8 border-r border-gray-100">
-            {product.image && product.image.url ? (
-              <img 
-                src={product.image.url} 
-                alt={product.name} 
-                className="max-h-[500px] w-auto object-contain rounded-lg shadow-sm"
-              />
+          <div className="md:w-1/2 bg-gray-50 flex flex-col items-center justify-center p-8 border-r border-gray-100">
+            {mainImage ? (
+              <div className="w-full flex flex-col items-center">
+                <img 
+                  src={mainImage} 
+                  alt={product.name} 
+                  className="max-h-[400px] w-auto object-contain rounded-lg shadow-sm mb-6"
+                />
+                {product.images && product.images.length > 1 && (
+                  <div className="flex gap-2 mt-4 overflow-x-auto pb-2 w-full justify-center">
+                    {product.images.map((img) => (
+                      <button
+                        key={img.publicId}
+                        onClick={() => setMainImage(img.url)}
+                        className={`flex-shrink-0 w-16 h-16 rounded-md overflow-hidden border-2 transition-all ${
+                          mainImage === img.url ? 'border-indigo-600 ring-2 ring-indigo-200' : 'border-transparent hover:border-gray-300'
+                        }`}
+                      >
+                        <img src={img.url} alt="thumbnail" className="w-full h-full object-cover" />
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
             ) : (
               <div className="text-gray-400 flex flex-col items-center">
                 <svg className="w-24 h-24 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">

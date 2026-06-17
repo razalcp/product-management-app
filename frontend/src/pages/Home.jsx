@@ -3,12 +3,13 @@ import { Link } from 'react-router-dom';
 import api from '../services/api';
 
 const ProductCard = ({ product }) => {
+  const thumbnail = product.images && product.images.length > 0 ? product.images[0].url : null;
   return (
     <Link to={`/products/${product._id}`} className="group relative bg-white border border-gray-200 rounded-lg shadow-sm overflow-hidden hover:shadow-md transition-shadow">
       <div className="aspect-w-3 aspect-h-2 bg-gray-100 flex items-center justify-center p-4 h-48 overflow-hidden">
-        {product.image && product.image.url ? (
+        {thumbnail ? (
           <img
-            src={product.image.url}
+            src={thumbnail}
             alt={product.name}
             className="object-contain w-full h-full group-hover:scale-105 transition-transform duration-300"
           />

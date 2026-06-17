@@ -35,6 +35,14 @@ const productSchema = new mongoose.Schema({
       type: String,
     }
   },
+  images: [{
+    publicId: {
+      type: String,
+    },
+    url: {
+      type: String,
+    }
+  }],
   category: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Category',
@@ -50,7 +58,15 @@ const productSchema = new mongoose.Schema({
     ref: 'User',
     required: true,
   },
-  variants: [variantSchema]
+  variants: {
+    type: [variantSchema],
+    validate: {
+      validator: function(v) {
+        return Array.isArray(v) && v.length > 0;
+      },
+      message: 'A product must contain at least one variant.'
+    }
+  }
 }, { timestamps: true });
 
 module.exports = mongoose.model('Product', productSchema);

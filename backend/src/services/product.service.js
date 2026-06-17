@@ -3,7 +3,20 @@ const categoryRepository = require('../repositories/category.repository');
 const subcategoryRepository = require('../repositories/subcategory.repository');
 const cloudinaryUtils = require('../utils/cloudinary');
 
-const createProduct = async (data, file, userId) => {
+const normalizeProductImages = (product) => {
+  const prodObj = product.toObject ? product.toObject() : product;
+  if (!prodObj.images || prodObj.images.length === 0) {
+    if (prodObj.image && prodObj.image.url) {
+      prodObj.images = [prodObj.image];
+    } else {
+      prodObj.images = [];
+    }
+  }
+  delete prodObj.image;
+  return prodObj;
+};
+
+const createProduct = async (data, files, userId) => {
   const { name, description, category, subCategory, variants } = data;
 
   // 1. Validate Category ownership
@@ -22,14 +35,19 @@ const createProduct = async (data, file, userId) => {
     throw new Error('Selected subcategory does not belong to the selected category');
   }
 
-  // 3. Process Image Upload
-  let image = {};
-  if (file) {
-    const uploadResult = await cloudinaryUtils.uploadBufferToCloudinary(file.buffer);
-    image = {
-      publicId: uploadResult.publicId,
-      url: uploadResult.url
-    };
+  // 3. Process Image Uploads
+  let images = [];
+  if (files && files.length > 0) {
+    if (files.length > 5) {
+      throw new Error('Maximum of 5 images allowed.');
+    }
+    const uploadPromises = files.map(file => cloudinaryUtils.uploadBufferToCloudinary(file.buffer));
+    images = await Promise.all(uploadPromises);
+  }
+
+  const parsedVariants = variants ? JSON.parse(variants) : [];
+  if (!parsedVariants || parsedVariants.length === 0) {
+    throw new Error('A product must contain at least one variant.');
   }
 
   // 4. Create Product
@@ -39,15 +57,17 @@ const createProduct = async (data, file, userId) => {
     category,
     subCategory,
     user: userId,
-    variants: variants ? JSON.parse(variants) : [],
-    image
+    variants: parsedVariants,
+    images
   };
 
-  return await productRepository.create(productData);
+  const createdProduct = await productRepository.create(productData);
+  return normalizeProductImages(createdProduct);
 };
 
 const getAllProducts = async (userId) => {
-  return await productRepository.findAllByUser(userId);
+  const products = await productRepository.findAllByUser(userId);
+  return products.map(normalizeProductImages);
 };
 
 const getProductById = async (id, userId) => {
@@ -55,11 +75,11 @@ const getProductById = async (id, userId) => {
   if (!product) {
     throw new Error('Product not found');
   }
-  return product;
+  return normalizeProductImages(product);
 };
 
-const updateProduct = async (id, userId, data, file) => {
-  const { category, subCategory, variants } = data;
+const updateProduct = async (id, userId, data, files) => {
+  const { category, subCategory, variants, imagesToDelete } = data;
 
   const currentProduct = await productRepository.findByIdAndUser(id, userId);
   if (!currentProduct) {
@@ -87,19 +107,26 @@ const updateProduct = async (id, userId, data, file) => {
   }
 
   // 2. Process Image Update
-  let image = currentProduct.image;
-  if (file) {
-    // Delete old image from Cloudinary
-    if (image && image.publicId) {
-      await cloudinaryUtils.deleteFromCloudinary(image.publicId);
-    }
-    
-    // Upload new image
-    const uploadResult = await cloudinaryUtils.uploadBufferToCloudinary(file.buffer);
-    image = {
-      publicId: uploadResult.publicId,
-      url: uploadResult.url
-    };
+  let currentImages = currentProduct.images && currentProduct.images.length > 0 
+    ? [...currentProduct.images] 
+    : (currentProduct.image && currentProduct.image.url ? [currentProduct.image] : []);
+
+  const toDeleteIds = imagesToDelete ? JSON.parse(imagesToDelete) : [];
+
+  for (const publicId of toDeleteIds) {
+    await cloudinaryUtils.deleteFromCloudinary(publicId);
+    currentImages = currentImages.filter(img => img.publicId !== publicId);
+  }
+
+  const newFilesCount = files ? files.length : 0;
+  if (currentImages.length + newFilesCount > 5) {
+    throw new Error('Maximum of 5 images allowed.');
+  }
+
+  if (files && files.length > 0) {
+    const uploadPromises = files.map(file => cloudinaryUtils.uploadBufferToCloudinary(file.buffer));
+    const newImages = await Promise.all(uploadPromises);
+    currentImages = [...currentImages, ...newImages];
   }
 
   // 3. Update Product
@@ -107,14 +134,19 @@ const updateProduct = async (id, userId, data, file) => {
     ...data,
     category: newCategory,
     subCategory: newSubcategory,
-    image
+    images: currentImages
   };
 
   if (variants) {
-    updateData.variants = typeof variants === 'string' ? JSON.parse(variants) : variants;
+    const parsedVariants = typeof variants === 'string' ? JSON.parse(variants) : variants;
+    if (!parsedVariants || parsedVariants.length === 0) {
+      throw new Error('A product must contain at least one variant.');
+    }
+    updateData.variants = parsedVariants;
   }
 
-  return await productRepository.updateByIdAndUser(id, userId, updateData);
+  const updatedProduct = await productRepository.updateByIdAndUser(id, userId, updateData);
+  return normalizeProductImages(updatedProduct);
 };
 
 const deleteProduct = async (id, userId) => {
@@ -123,12 +155,18 @@ const deleteProduct = async (id, userId) => {
     throw new Error('Product not found');
   }
 
-  // Delete image from Cloudinary
-  if (product.image && product.image.publicId) {
-    await cloudinaryUtils.deleteFromCloudinary(product.image.publicId);
+  const images = product.images && product.images.length > 0 
+    ? product.images 
+    : (product.image && product.image.url ? [product.image] : []);
+
+  for (const img of images) {
+    if (img.publicId) {
+      await cloudinaryUtils.deleteFromCloudinary(img.publicId);
+    }
   }
 
-  return await productRepository.deleteByIdAndUser(id, userId);
+  const deletedProduct = await productRepository.deleteByIdAndUser(id, userId);
+  return normalizeProductImages(deletedProduct);
 };
 
 module.exports = {

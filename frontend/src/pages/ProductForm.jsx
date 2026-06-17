@@ -1,12 +1,10 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import api from '../services/api';
-// import { AuthContext } from '../context/AuthContext';
 
 const ProductForm = () => {
   const { id } = useParams();
   const navigate = useNavigate();
-  // const { user } = useContext(AuthContext);
 
   const isEditing = Boolean(id);
 
@@ -18,9 +16,13 @@ const ProductForm = () => {
   const [description, setDescription] = useState('');
   const [category, setCategory] = useState('');
   const [subCategory, setSubCategory] = useState('');
-  const [image, setImage] = useState(null);
-  const [currentImageUrl, setCurrentImageUrl] = useState('');
   
+  // Image States
+  const [existingImages, setExistingImages] = useState([]);
+  const [newImages, setNewImages] = useState([]);
+  const [previewUrls, setPreviewUrls] = useState([]);
+  const [imagesToDelete, setImagesToDelete] = useState([]);
+
   const [variants, setVariants] = useState([{ ram: '', price: '', quantity: '' }]);
 
   const [error, setError] = useState('');
@@ -32,6 +34,13 @@ const ProductForm = () => {
       fetchProduct();
     }
   }, [id]);
+
+  // Cleanup object URLs to prevent memory leaks
+  useEffect(() => {
+    return () => {
+      previewUrls.forEach(url => URL.revokeObjectURL(url));
+    };
+  }, [previewUrls]);
 
   const fetchCategoriesAndSubcategories = async () => {
     try {
@@ -56,8 +65,8 @@ const ProductForm = () => {
         setCategory(prod.category?._id || '');
         setSubCategory(prod.subCategory?._id || '');
         setVariants(prod.variants?.length ? prod.variants : [{ ram: '', price: '', quantity: '' }]);
-        if (prod.image && prod.image.url) {
-          setCurrentImageUrl(prod.image.url);
+        if (prod.images && prod.images.length > 0) {
+          setExistingImages(prod.images);
         }
       }
     } catch (err) {
@@ -69,7 +78,6 @@ const ProductForm = () => {
     if (category) {
       const filtered = subcategories.filter(sub => sub.category?._id === category);
       setFilteredSubcategories(filtered);
-      // Reset subcategory if it's no longer valid
       if (subCategory && !filtered.find(s => s._id === subCategory)) {
         setSubCategory('');
       }
@@ -89,14 +97,38 @@ const ProductForm = () => {
   };
 
   const removeVariant = (index) => {
+    if (variants.length <= 1) return;
     const newVariants = variants.filter((_, i) => i !== index);
     setVariants(newVariants);
   };
 
   const handleImageChange = (e) => {
-    if (e.target.files && e.target.files[0]) {
-      setImage(e.target.files[0]);
+    if (e.target.files) {
+      const filesArray = Array.from(e.target.files);
+      const totalImages = existingImages.length + newImages.length + filesArray.length;
+      
+      if (totalImages > 5) {
+        setError('Maximum of 5 combined images allowed.');
+        return;
+      }
+
+      setError('');
+      setNewImages(prev => [...prev, ...filesArray]);
+      
+      const newUrls = filesArray.map(file => URL.createObjectURL(file));
+      setPreviewUrls(prev => [...prev, ...newUrls]);
     }
+  };
+
+  const removeNewImage = (index) => {
+    URL.revokeObjectURL(previewUrls[index]);
+    setNewImages(prev => prev.filter((_, i) => i !== index));
+    setPreviewUrls(prev => prev.filter((_, i) => i !== index));
+  };
+
+  const removeExistingImage = (publicId) => {
+    setExistingImages(prev => prev.filter(img => img.publicId !== publicId));
+    setImagesToDelete(prev => [...prev, publicId]);
   };
 
   const handleSubmit = async (e) => {
@@ -110,6 +142,18 @@ const ProductForm = () => {
       return;
     }
 
+    if (variants.length === 0) {
+      setError('A product must contain at least one variant.');
+      setIsLoading(false);
+      return;
+    }
+
+    if (existingImages.length + newImages.length > 5) {
+      setError('Maximum of 5 combined images allowed.');
+      setIsLoading(false);
+      return;
+    }
+
     try {
       const formData = new FormData();
       formData.append('name', name);
@@ -117,10 +161,11 @@ const ProductForm = () => {
       formData.append('category', category);
       formData.append('subCategory', subCategory);
       formData.append('variants', JSON.stringify(variants));
+      formData.append('imagesToDelete', JSON.stringify(imagesToDelete));
       
-      if (image) {
-        formData.append('image', image);
-      }
+      newImages.forEach(file => {
+        formData.append('images', file);
+      });
 
       if (isEditing) {
         const res = await api.put(`/products/${id}`, formData, {
@@ -222,17 +267,45 @@ const ProductForm = () => {
             </div>
 
             <div className="sm:col-span-2">
-              <label className="block text-sm font-medium text-gray-700">Product Image</label>
-              {currentImageUrl && !image && (
-                <div className="mt-2 mb-4">
-                  <img src={currentImageUrl} alt="Current product" className="h-32 w-auto object-cover rounded-md border border-gray-200" />
-                </div>
-              )}
+              <label className="block text-sm font-medium text-gray-700 mb-2">Product Images (Max 5)</label>
+              
+              <div className="flex flex-wrap gap-4 mb-4">
+                {existingImages.map((img) => (
+                  <div key={img.publicId} className="relative group">
+                    <img src={img.url} alt="Existing product" className="h-24 w-24 object-cover rounded-md border border-gray-200" />
+                    <button
+                      type="button"
+                      onClick={() => removeExistingImage(img.publicId)}
+                      className="absolute top-1 right-1 bg-red-600 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                      title="Remove image"
+                    >
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                    </button>
+                  </div>
+                ))}
+                
+                {previewUrls.map((url, index) => (
+                  <div key={url} className="relative group">
+                    <img src={url} alt="New product" className="h-24 w-24 object-cover rounded-md border border-indigo-200 shadow-sm" />
+                    <button
+                      type="button"
+                      onClick={() => removeNewImage(index)}
+                      className="absolute top-1 right-1 bg-red-600 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                      title="Remove image"
+                    >
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                    </button>
+                  </div>
+                ))}
+              </div>
+
               <input
                 type="file"
                 accept="image/*"
+                multiple
                 onChange={handleImageChange}
-                className="mt-1 block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100"
+                disabled={existingImages.length + newImages.length >= 5}
+                className="mt-1 block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100 disabled:opacity-50"
               />
             </div>
           </div>

@@ -3,8 +3,8 @@ const productService = require('../services/product.service');
 const createProduct = async (req, res) => {
   try {
     const userId = req.user._id;
-    const file = req.file; // From multer
-    const product = await productService.createProduct(req.body, file, userId);
+    const files = req.files || []; // From multer array
+    const product = await productService.createProduct(req.body, files, userId);
     res.status(201).json({ success: true, data: product });
   } catch (error) {
     res.status(400).json({ success: false, message: error.message });
@@ -34,8 +34,8 @@ const getProductById = async (req, res) => {
 const updateProduct = async (req, res) => {
   try {
     const userId = req.user._id;
-    const file = req.file; // From multer
-    const product = await productService.updateProduct(req.params.id, userId, req.body, file);
+    const files = req.files || []; // From multer array
+    const product = await productService.updateProduct(req.params.id, userId, req.body, files);
     res.status(200).json({ success: true, data: product });
   } catch (error) {
     res.status(400).json({ success: false, message: error.message });

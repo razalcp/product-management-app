@@ -15,12 +15,12 @@ const router = express.Router();
 router.use(protect);
 
 router.route('/')
-  .post(upload.single('image'), createProduct)
+  .post(upload.array('images', 5), createProduct)
   .get(getProducts);
 
 router.route('/:id')
   .get(getProductById)
-  .put(upload.single('image'), updateProduct)
+  .put(upload.array('images', 5), updateProduct)
   .delete(deleteProduct);
 
 module.exports = router;
