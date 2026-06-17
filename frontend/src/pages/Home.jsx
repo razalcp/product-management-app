@@ -12,7 +12,7 @@ const Home = () => {
   // Search, Filter, Pagination State
   const [search, setSearch] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
-  const [subcategoryId, setSubcategoryId] = useState('');
+  const [selectedSubcategories, setSelectedSubcategories] = useState([]);
   const [subcategories, setSubcategories] = useState([]);
   const [page, setPage] = useState(1);
   const [paginationData, setPaginationData] = useState({ currentPage: 1, totalPages: 1, totalProducts: 0 });
@@ -43,18 +43,18 @@ const Home = () => {
   // Reset Page to 1 on Filter Change
   useEffect(() => {
     setPage(1);
-  }, [debouncedSearch, subcategoryId]);
+  }, [debouncedSearch, selectedSubcategories]);
 
   // Fetch Products
   useEffect(() => {
     fetchProducts();
-  }, [debouncedSearch, subcategoryId, page]);
+  }, [debouncedSearch, selectedSubcategories, page]);
 
   const fetchProducts = async () => {
     try {
       setIsLoading(true);
       const response = await api.get('/products', {
-        params: { search: debouncedSearch, subcategory: subcategoryId, page, limit: 8 }
+        params: { search: debouncedSearch, subcategories: selectedSubcategories.map(s => s._id).join(','), page, limit: 8 }
       });
       if (response.data.success) {
         setProducts(response.data.data.products);
@@ -99,17 +99,54 @@ const Home = () => {
         </div>
         <div className="w-48">
           <select 
-            value={subcategoryId}
-            onChange={(e) => setSubcategoryId(e.target.value)}
+            value=""
+            onChange={(e) => {
+              if (!e.target.value) return;
+              const selectedId = e.target.value;
+              const sub = subcategories.find(s => s._id === selectedId);
+              if (sub && !selectedSubcategories.some(s => s._id === selectedId)) {
+                setSelectedSubcategories([...selectedSubcategories, sub]);
+              }
+            }}
             className="block w-full rounded-md border border-gray-300 py-2 px-3 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 sm:text-sm bg-white"
           >
-            <option value="">All Subcategories</option>
+            <option value="">Select Subcategory</option>
             {subcategories.map(sub => (
-              <option key={sub._id} value={sub._id}>{sub.name}</option>
+              <option key={sub._id} value={sub._id} disabled={selectedSubcategories.some(s => s._id === sub._id)}>
+                {sub.name}
+              </option>
             ))}
           </select>
         </div>
       </div>
+
+      {/* Selected Subcategories Chips */}
+      {selectedSubcategories.length > 0 && (
+        <div className="mb-6 flex flex-wrap gap-2 items-center">
+          <span className="text-sm text-gray-500 mr-2">Filters:</span>
+          {selectedSubcategories.map(sub => (
+            <span key={sub._id} className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-indigo-100 text-indigo-800">
+              {sub.name}
+              <button
+                type="button"
+                onClick={() => setSelectedSubcategories(prev => prev.filter(s => s._id !== sub._id))}
+                className="flex-shrink-0 ml-1.5 h-4 w-4 rounded-full inline-flex items-center justify-center text-indigo-400 hover:bg-indigo-200 hover:text-indigo-500 focus:outline-none focus:bg-indigo-500 focus:text-white"
+              >
+                <span className="sr-only">Remove filter</span>
+                <svg className="h-2 w-2" stroke="currentColor" fill="none" viewBox="0 0 8 8">
+                  <path strokeLinecap="round" strokeWidth="1.5" d="M1 1l6 6m0-6L1 7" />
+                </svg>
+              </button>
+            </span>
+          ))}
+          <button
+            onClick={() => setSelectedSubcategories([])}
+            className="text-sm text-gray-500 hover:text-gray-700 ml-2 underline"
+          >
+            Clear all
+          </button>
+        </div>
+      )}
 
       {/* Product Grid */}
       {isLoading ? (

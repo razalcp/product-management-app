@@ -70,11 +70,11 @@ const getAllProducts = async (userId, queryParams = {}) => {
   const limit = parseInt(queryParams.limit) || 8;
   const page = parseInt(queryParams.page) || 1;
   const search = queryParams.search || '';
-  const subcategory = queryParams.subcategory || '';
+  const subcategories = queryParams.subcategories || '';
 
   const { products, totalProducts } = await productRepository.findWithFilters(userId, {
     search,
-    subcategory,
+    subcategories,
     page,
     limit
   });
@@ -94,13 +94,13 @@ const getProductById = async (id, userId) => {
   if (!product) {
     throw new Error('Product not found');
   }
-  
+
   const normalized = normalizeProductImages(product);
-  
+
   // Append wishlist status
   const isWishlisted = await wishlistRepository.existsByUserAndProduct(userId, id);
   normalized.isWishlisted = isWishlisted;
-  
+
   return normalized;
 };
 
@@ -133,8 +133,8 @@ const updateProduct = async (id, userId, data, files) => {
   }
 
   // 2. Process Image Update
-  let currentImages = currentProduct.images && currentProduct.images.length > 0 
-    ? [...currentProduct.images] 
+  let currentImages = currentProduct.images && currentProduct.images.length > 0
+    ? [...currentProduct.images]
     : (currentProduct.image && currentProduct.image.url ? [currentProduct.image] : []);
 
   const toDeleteIds = imagesToDelete ? JSON.parse(imagesToDelete) : [];
@@ -181,8 +181,8 @@ const deleteProduct = async (id, userId) => {
     throw new Error('Product not found');
   }
 
-  const images = product.images && product.images.length > 0 
-    ? product.images 
+  const images = product.images && product.images.length > 0
+    ? product.images
     : (product.image && product.image.url ? [product.image] : []);
 
   for (const img of images) {

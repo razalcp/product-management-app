@@ -11,15 +11,21 @@ const findAllByUser = async (userId) => {
     .sort({ createdAt: -1 });
 };
 
-const findWithFilters = async (userId, { search, subcategory, page = 1, limit = 8 }) => {
+const findWithFilters = async (userId, { search, subcategories, page = 1, limit = 8 }) => {
   const query = { user: userId };
-  
+
   if (search) {
     query.name = { $regex: search, $options: 'i' };
   }
-  
-  if (subcategory) {
-    query.subCategory = subcategory;
+
+  if (subcategories) {
+    const ids = subcategories
+      .split(',')
+      .map(id => id.trim())
+      .filter(Boolean);
+    if (ids.length > 0) {
+      query.subCategory = { $in: ids };
+    }
   }
 
   const skip = (page - 1) * limit;
@@ -45,8 +51,8 @@ const findByIdAndUser = async (id, userId) => {
 
 const updateByIdAndUser = async (id, userId, data) => {
   return await Product.findOneAndUpdate(
-    { _id: id, user: userId }, 
-    data, 
+    { _id: id, user: userId },
+    data,
     { new: true, runValidators: true }
   )
     .populate('category', 'name')
