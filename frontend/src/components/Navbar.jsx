@@ -1,9 +1,11 @@
 import { useContext } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { AuthContext } from '../context/AuthContext';
+import { useWishlist } from '../context/WishlistContext';
 
 const Navbar = () => {
   const { user, logout } = useContext(AuthContext);
+  const { wishlistCount } = useWishlist();
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -33,13 +35,17 @@ const Navbar = () => {
                 <Link
                   key={link.name}
                   to={link.path}
-                  className={`${
-                    location.pathname === link.path
+                  className={`${location.pathname === link.path
                       ? 'border-indigo-500 text-indigo-600'
                       : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700'
-                  } inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium transition-colors whitespace-nowrap`}
+                    } inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium transition-colors whitespace-nowrap`}
                 >
                   {link.name}
+                  {link.name === 'Wishlist' && wishlistCount > 0 && (
+                    <span className="ml-1.5 inline-flex items-center justify-center px-2 py-0.5 rounded-full text-xs font-bold bg-indigo-100 text-indigo-800">
+                      {wishlistCount}
+                    </span>
+                  )}
                 </Link>
               ))}
             </div>

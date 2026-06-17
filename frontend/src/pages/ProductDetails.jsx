@@ -1,10 +1,12 @@
 import { useState, useEffect } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import api from '../services/api';
+import { useWishlist } from '../context/WishlistContext';
 
 const ProductDetails = () => {
   const { id } = useParams();
   const navigate = useNavigate();
+  const { addToWishlistState, removeFromWishlistState } = useWishlist();
   const [product, setProduct] = useState(null);
   const [mainImage, setMainImage] = useState(null);
   const [isWishlisted, setIsWishlisted] = useState(false);
@@ -37,9 +39,11 @@ const ProductDetails = () => {
       if (isWishlisted) {
         await api.delete(`/wishlists/${id}`);
         setIsWishlisted(false);
+        removeFromWishlistState(id);
       } else {
         await api.post(`/wishlists/${id}`);
         setIsWishlisted(true);
+        addToWishlistState(product);
       }
     } catch (err) {
       alert(err.response?.data?.message || 'Failed to update wishlist');
@@ -74,9 +78,9 @@ const ProductDetails = () => {
           <div className="md:w-1/2 bg-gray-50 flex flex-col items-center justify-center p-8 border-r border-gray-100">
             {mainImage ? (
               <div className="w-full flex flex-col items-center">
-                <img 
-                  src={mainImage} 
-                  alt={product.name} 
+                <img
+                  src={mainImage}
+                  alt={product.name}
                   className="max-h-[400px] w-auto object-contain rounded-lg shadow-sm mb-6"
                 />
                 {product.images && product.images.length > 1 && (
@@ -85,9 +89,8 @@ const ProductDetails = () => {
                       <button
                         key={img.publicId}
                         onClick={() => setMainImage(img.url)}
-                        className={`flex-shrink-0 w-16 h-16 rounded-md overflow-hidden border-2 transition-all ${
-                          mainImage === img.url ? 'border-indigo-600 ring-2 ring-indigo-200' : 'border-transparent hover:border-gray-300'
-                        }`}
+                        className={`flex-shrink-0 w-16 h-16 rounded-md overflow-hidden border-2 transition-all ${mainImage === img.url ? 'border-indigo-600 ring-2 ring-indigo-200' : 'border-transparent hover:border-gray-300'
+                          }`}
                       >
                         <img src={img.url} alt="thumbnail" className="w-full h-full object-cover" />
                       </button>
@@ -122,11 +125,10 @@ const ProductDetails = () => {
               <div className="flex gap-2">
                 <button
                   onClick={toggleWishlist}
-                  className={`px-3 py-1.5 border rounded text-sm font-medium transition-colors ${
-                    isWishlisted 
-                      ? 'bg-pink-50 text-pink-600 border-pink-200 hover:bg-pink-100' 
+                  className={`px-3 py-1.5 border rounded text-sm font-medium transition-colors ${isWishlisted
+                      ? 'bg-pink-50 text-pink-600 border-pink-200 hover:bg-pink-100'
                       : 'bg-white text-gray-600 border-gray-300 hover:bg-gray-50'
-                  }`}
+                    }`}
                 >
                   {isWishlisted ? '♥ Saved' : '♡ Save'}
                 </button>

@@ -1,5 +1,6 @@
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
+import { WishlistProvider } from './context/WishlistContext';
 import ProtectedRoute from './components/ProtectedRoute';
 import Login from './pages/Login';
 import Signup from './pages/Signup';
@@ -13,68 +14,70 @@ import Wishlist from './pages/Wishlist';
 function App() {
   return (
     <AuthProvider>
-      <Router>
+      <WishlistProvider>
+        <Router>
         <Routes>
           <Route path="/login" element={<Login />} />
           <Route path="/signup" element={<Signup />} />
-          <Route 
-            path="/" 
+          <Route
+            path="/"
             element={
               <ProtectedRoute>
                 <Home />
               </ProtectedRoute>
-            } 
+            }
           />
-          <Route 
-            path="/categories" 
+          <Route
+            path="/categories"
             element={
               <ProtectedRoute>
                 <Categories />
               </ProtectedRoute>
-            } 
+            }
           />
-          <Route 
-            path="/subcategories" 
+          <Route
+            path="/subcategories"
             element={
               <ProtectedRoute>
                 <Subcategories />
               </ProtectedRoute>
-            } 
+            }
           />
-          <Route 
-            path="/products/new" 
+          <Route
+            path="/products/new"
             element={
               <ProtectedRoute>
                 <ProductForm />
               </ProtectedRoute>
-            } 
+            }
           />
-          <Route 
-            path="/products/edit/:id" 
+          <Route
+            path="/products/edit/:id"
             element={
               <ProtectedRoute>
                 <ProductForm />
               </ProtectedRoute>
-            } 
+            }
           />
-          <Route 
-            path="/products/:id" 
+          <Route
+            path="/products/:id"
             element={
               <ProtectedRoute>
                 <ProductDetails />
               </ProtectedRoute>
-            } 
+            }
           />
-          <Route 
-            path="/wishlist" 
+          <Route
+            path="/wishlist"
             element={
               <ProtectedRoute>
                 <Wishlist />
               </ProtectedRoute>
-            } 
+            }
           />
         </Routes>
       </Router>
+      </WishlistProvider>
     </AuthProvider>
   );
 }

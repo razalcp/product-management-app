@@ -2,35 +2,22 @@ import { useState, useEffect } from 'react';
 import api from '../services/api';
 import ProductCard from '../components/ProductCard';
 import { Link } from 'react-router-dom';
+import { useWishlist } from '../context/WishlistContext';
 
 const Wishlist = () => {
-  const [products, setProducts] = useState([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const { wishlistItems, isLoadingWishlist, removeFromWishlistState, refreshWishlistItems } = useWishlist();
   const [error, setError] = useState('');
   const [removingId, setRemovingId] = useState(null);
 
   useEffect(() => {
-    fetchWishlist();
+    refreshWishlistItems();
   }, []);
-
-  const fetchWishlist = async () => {
-    try {
-      const response = await api.get('/wishlists');
-      if (response.data.success) {
-        setProducts(response.data.data);
-      }
-    } catch (err) {
-      setError('Failed to fetch wishlist');
-    } finally {
-      setIsLoading(false);
-    }
-  };
 
   const handleRemove = async (productId) => {
     try {
       setRemovingId(productId);
       await api.delete(`/wishlists/${productId}`);
-      setProducts(prev => prev.filter(p => p._id !== productId));
+      removeFromWishlistState(productId);
     } catch (err) {
       alert(err.response?.data?.message || 'Failed to remove from wishlist');
     } finally {
@@ -45,11 +32,11 @@ const Wishlist = () => {
         <p className="mt-1 text-sm text-gray-500">View and manage your saved products.</p>
       </div>
 
-      {isLoading ? (
+      {isLoadingWishlist ? (
         <div className="text-center py-12 text-gray-500">Loading wishlist...</div>
       ) : error ? (
         <div className="text-center py-12 text-red-500">{error}</div>
-      ) : products.length === 0 ? (
+      ) : wishlistItems.length === 0 ? (
         <div className="text-center py-16 bg-white rounded-lg border border-gray-200 border-dashed">
           <svg className="mx-auto h-12 w-12 text-pink-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
@@ -67,10 +54,10 @@ const Wishlist = () => {
         </div>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-          {products.map((product) => (
-            <ProductCard 
-              key={product._id} 
-              product={product} 
+          {wishlistItems.map((product) => (
+            <ProductCard
+              key={product._id}
+              product={product}
               onRemoveFromWishlist={handleRemove}
               isRemoving={removingId === product._id}
             />
