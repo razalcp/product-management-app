@@ -7,6 +7,7 @@ const ProductDetails = () => {
   const navigate = useNavigate();
   const [product, setProduct] = useState(null);
   const [mainImage, setMainImage] = useState(null);
+  const [isWishlisted, setIsWishlisted] = useState(false);
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(true);
 
@@ -17,6 +18,7 @@ const ProductDetails = () => {
         if (response.data.success) {
           const prod = response.data.data;
           setProduct(prod);
+          setIsWishlisted(prod.isWishlisted || false);
           if (prod.images && prod.images.length > 0) {
             setMainImage(prod.images[0].url);
           }
@@ -29,6 +31,20 @@ const ProductDetails = () => {
     };
     fetchProduct();
   }, [id]);
+
+  const toggleWishlist = async () => {
+    try {
+      if (isWishlisted) {
+        await api.delete(`/wishlists/${id}`);
+        setIsWishlisted(false);
+      } else {
+        await api.post(`/wishlists/${id}`);
+        setIsWishlisted(true);
+      }
+    } catch (err) {
+      alert(err.response?.data?.message || 'Failed to update wishlist');
+    }
+  };
 
   const handleDelete = async () => {
     if (!window.confirm('Are you sure you want to delete this product?')) return;
@@ -104,6 +120,16 @@ const ProductDetails = () => {
                 </div>
               </div>
               <div className="flex gap-2">
+                <button
+                  onClick={toggleWishlist}
+                  className={`px-3 py-1.5 border rounded text-sm font-medium transition-colors ${
+                    isWishlisted 
+                      ? 'bg-pink-50 text-pink-600 border-pink-200 hover:bg-pink-100' 
+                      : 'bg-white text-gray-600 border-gray-300 hover:bg-gray-50'
+                  }`}
+                >
+                  {isWishlisted ? '♥ Saved' : '♡ Save'}
+                </button>
                 <Link
                   to={`/products/edit/${product._id}`}
                   className="bg-white text-indigo-600 hover:text-indigo-900 px-3 py-1.5 border border-indigo-200 rounded text-sm font-medium transition-colors"

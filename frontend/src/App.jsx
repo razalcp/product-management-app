@@ -8,6 +8,7 @@ import Categories from './pages/Categories';
 import Subcategories from './pages/Subcategories';
 import ProductForm from './pages/ProductForm';
 import ProductDetails from './pages/ProductDetails';
+import Wishlist from './pages/Wishlist';
 
 function App() {
   return (
@@ -61,6 +62,14 @@ function App() {
             element={
               <ProtectedRoute>
                 <ProductDetails />
+              </ProtectedRoute>
+            } 
+          />
+          <Route 
+            path="/wishlist" 
+            element={
+              <ProtectedRoute>
+                <Wishlist />
               </ProtectedRoute>
             } 
           />

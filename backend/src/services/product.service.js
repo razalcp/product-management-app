@@ -1,6 +1,7 @@
 const productRepository = require('../repositories/product.repository');
 const categoryRepository = require('../repositories/category.repository');
 const subcategoryRepository = require('../repositories/subcategory.repository');
+const wishlistRepository = require('../repositories/wishlist.repository');
 const cloudinaryUtils = require('../utils/cloudinary');
 
 const normalizeProductImages = (product) => {
@@ -75,7 +76,14 @@ const getProductById = async (id, userId) => {
   if (!product) {
     throw new Error('Product not found');
   }
-  return normalizeProductImages(product);
+  
+  const normalized = normalizeProductImages(product);
+  
+  // Append wishlist status
+  const isWishlisted = await wishlistRepository.existsByUserAndProduct(userId, id);
+  normalized.isWishlisted = isWishlisted;
+  
+  return normalized;
 };
 
 const updateProduct = async (id, userId, data, files) => {
@@ -165,6 +173,9 @@ const deleteProduct = async (id, userId) => {
     }
   }
 
+  // Cascade delete wishlist entries
+  await wishlistRepository.deleteByProduct(id);
+
   const deletedProduct = await productRepository.deleteByIdAndUser(id, userId);
   return normalizeProductImages(deletedProduct);
 };
@@ -175,4 +186,5 @@ module.exports = {
   getProductById,
   updateProduct,
   deleteProduct,
+  normalizeProductImages,
 };
