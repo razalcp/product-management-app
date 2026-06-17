@@ -5,6 +5,7 @@ const morgan = require('morgan');
 
 // Import routes
 const authRoutes = require('./routes/auth.routes');
+const categoryRoutes = require('./routes/category.routes');
 
 // Initialize express app
 const app = express();
@@ -32,6 +33,7 @@ app.get('/api/health', (req, res) => {
 
 // API Routes
 app.use('/api/auth', authRoutes);
+app.use('/api/categories', categoryRoutes);
 
 // TODO: Import and use core application routes here
 // Example: app.use('/api/products', productRoutes);

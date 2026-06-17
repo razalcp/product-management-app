@@ -1,6 +1,6 @@
 import { useContext } from 'react';
 import { AuthContext } from '../context/AuthContext';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 
 const Home = () => {
   const { user, logout } = useContext(AuthContext);
@@ -18,6 +18,13 @@ const Home = () => {
         <p className="text-lg text-gray-600">
           Hello, <span className="font-semibold text-indigo-600">{user?.name}</span>!
         </p>
+        
+        <div className="flex justify-center pt-2">
+           <Link to="/categories" className="text-indigo-600 hover:text-indigo-800 font-medium bg-indigo-50 hover:bg-indigo-100 px-6 py-2 rounded-lg transition-colors border border-indigo-100">
+              Manage Categories
+           </Link>
+        </div>
+
         <div className="pt-6 border-t border-gray-100">
           <p className="text-sm text-gray-500 mb-6">You are securely logged in.</p>
           <button
