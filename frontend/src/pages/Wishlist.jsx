@@ -7,6 +7,7 @@ const Wishlist = () => {
   const [products, setProducts] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState('');
+  const [removingId, setRemovingId] = useState(null);
 
   useEffect(() => {
     fetchWishlist();
@@ -22,6 +23,18 @@ const Wishlist = () => {
       setError('Failed to fetch wishlist');
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const handleRemove = async (productId) => {
+    try {
+      setRemovingId(productId);
+      await api.delete(`/wishlists/${productId}`);
+      setProducts(prev => prev.filter(p => p._id !== productId));
+    } catch (err) {
+      alert(err.response?.data?.message || 'Failed to remove from wishlist');
+    } finally {
+      setRemovingId(null);
     }
   };
 
@@ -55,7 +68,12 @@ const Wishlist = () => {
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
           {products.map((product) => (
-            <ProductCard key={product._id} product={product} />
+            <ProductCard 
+              key={product._id} 
+              product={product} 
+              onRemoveFromWishlist={handleRemove}
+              isRemoving={removingId === product._id}
+            />
           ))}
         </div>
       )}
