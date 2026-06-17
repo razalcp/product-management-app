@@ -66,9 +66,27 @@ const createProduct = async (data, files, userId) => {
   return normalizeProductImages(createdProduct);
 };
 
-const getAllProducts = async (userId) => {
-  const products = await productRepository.findAllByUser(userId);
-  return products.map(normalizeProductImages);
+const getAllProducts = async (userId, queryParams = {}) => {
+  const limit = parseInt(queryParams.limit) || 8;
+  const page = parseInt(queryParams.page) || 1;
+  const search = queryParams.search || '';
+  const subcategory = queryParams.subcategory || '';
+
+  const { products, totalProducts } = await productRepository.findWithFilters(userId, {
+    search,
+    subcategory,
+    page,
+    limit
+  });
+
+  const normalizedProducts = products.map(normalizeProductImages);
+
+  return {
+    products: normalizedProducts,
+    currentPage: page,
+    totalPages: Math.ceil(totalProducts / limit),
+    totalProducts
+  };
 };
 
 const getProductById = async (id, userId) => {

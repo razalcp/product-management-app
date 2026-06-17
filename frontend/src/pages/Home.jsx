@@ -9,19 +9,60 @@ const Home = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState('');
 
-  // Future state for Search, Filter, Pagination
+  // Search, Filter, Pagination State
   const [search, setSearch] = useState('');
+  const [debouncedSearch, setDebouncedSearch] = useState('');
+  const [subcategoryId, setSubcategoryId] = useState('');
+  const [subcategories, setSubcategories] = useState([]);
+  const [page, setPage] = useState(1);
+  const [paginationData, setPaginationData] = useState({ currentPage: 1, totalPages: 1, totalProducts: 0 });
 
+  // Fetch Subcategories
+  useEffect(() => {
+    const fetchSubcategories = async () => {
+      try {
+        const response = await api.get('/subcategories');
+        if (response.data.success) {
+          setSubcategories(response.data.data);
+        }
+      } catch (err) {
+        console.error('Failed to load subcategories');
+      }
+    };
+    fetchSubcategories();
+  }, []);
+
+  // Debounce Search
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setDebouncedSearch(search);
+    }, 500);
+    return () => clearTimeout(handler);
+  }, [search]);
+
+  // Reset Page to 1 on Filter Change
+  useEffect(() => {
+    setPage(1);
+  }, [debouncedSearch, subcategoryId]);
+
+  // Fetch Products
   useEffect(() => {
     fetchProducts();
-  }, []);
+  }, [debouncedSearch, subcategoryId, page]);
 
   const fetchProducts = async () => {
     try {
-      // In the future, pass query params like ?search=${search}
-      const response = await api.get('/products');
+      setIsLoading(true);
+      const response = await api.get('/products', {
+        params: { search: debouncedSearch, subcategory: subcategoryId, page, limit: 8 }
+      });
       if (response.data.success) {
-        setProducts(response.data.data);
+        setProducts(response.data.data.products);
+        setPaginationData({
+          currentPage: response.data.data.currentPage,
+          totalPages: response.data.data.totalPages,
+          totalProducts: response.data.data.totalProducts
+        });
       }
     } catch (err) {
       setError('Failed to fetch products');
@@ -45,21 +86,27 @@ const Home = () => {
         </Link>
       </div>
 
-      {/* Top Bar for future Search and Filters */}
+      {/* Top Bar for Search and Filters */}
       <div className="bg-white p-4 rounded-lg shadow-sm border border-gray-200 mb-8 flex gap-4">
         <div className="flex-1">
           <input
             type="text"
-            placeholder="Search products... (Coming soon)"
-            disabled
+            placeholder="Search products by name..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="block w-full rounded-md border border-gray-300 py-2 px-3 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 sm:text-sm bg-gray-50"
+            className="block w-full rounded-md border border-gray-300 py-2 px-3 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 sm:text-sm bg-white"
           />
         </div>
         <div className="w-48">
-          <select disabled className="block w-full rounded-md border border-gray-300 py-2 px-3 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 sm:text-sm bg-gray-50">
-            <option>All Subcategories</option>
+          <select 
+            value={subcategoryId}
+            onChange={(e) => setSubcategoryId(e.target.value)}
+            className="block w-full rounded-md border border-gray-300 py-2 px-3 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 sm:text-sm bg-white"
+          >
+            <option value="">All Subcategories</option>
+            {subcategories.map(sub => (
+              <option key={sub._id} value={sub._id}>{sub.name}</option>
+            ))}
           </select>
         </div>
       </div>
@@ -93,13 +140,27 @@ const Home = () => {
         </div>
       )}
 
-      {/* Future Pagination */}
-      {products.length > 0 && (
-        <div className="mt-8 flex justify-center">
+      {/* Pagination */}
+      {!isLoading && !error && paginationData.totalPages > 1 && (
+        <div className="mt-8 flex justify-between items-center bg-white p-4 rounded-lg shadow-sm border border-gray-200">
+          <div className="text-sm text-gray-700">
+            Showing page <span className="font-medium">{paginationData.currentPage}</span> of <span className="font-medium">{paginationData.totalPages}</span> ({paginationData.totalProducts} total products)
+          </div>
           <nav className="relative z-0 inline-flex rounded-md shadow-sm -space-x-px" aria-label="Pagination">
-            <span className="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-500">
-              Pagination Coming Soon
-            </span>
+            <button
+              onClick={() => setPage(p => Math.max(1, p - 1))}
+              disabled={page === 1}
+              className="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 rounded-l-md disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              Previous
+            </button>
+            <button
+              onClick={() => setPage(p => Math.min(paginationData.totalPages, p + 1))}
+              disabled={page === paginationData.totalPages}
+              className="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 rounded-r-md disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              Next
+            </button>
           </nav>
         </div>
       )}

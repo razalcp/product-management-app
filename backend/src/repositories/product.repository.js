@@ -11,6 +11,32 @@ const findAllByUser = async (userId) => {
     .sort({ createdAt: -1 });
 };
 
+const findWithFilters = async (userId, { search, subcategory, page = 1, limit = 8 }) => {
+  const query = { user: userId };
+  
+  if (search) {
+    query.name = { $regex: search, $options: 'i' };
+  }
+  
+  if (subcategory) {
+    query.subCategory = subcategory;
+  }
+
+  const skip = (page - 1) * limit;
+
+  const [products, totalProducts] = await Promise.all([
+    Product.find(query)
+      .populate('category', 'name')
+      .populate('subCategory', 'name')
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(limit),
+    Product.countDocuments(query)
+  ]);
+
+  return { products, totalProducts };
+};
+
 const findByIdAndUser = async (id, userId) => {
   return await Product.findOne({ _id: id, user: userId })
     .populate('category', 'name')
@@ -34,6 +60,7 @@ const deleteByIdAndUser = async (id, userId) => {
 module.exports = {
   create,
   findAllByUser,
+  findWithFilters,
   findByIdAndUser,
   updateByIdAndUser,
   deleteByIdAndUser,
