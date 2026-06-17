@@ -1,9 +1,18 @@
 const express = require('express');
 const cors = require('cors');
 const cookieParser = require('cookie-parser');
+const morgan = require('morgan');
+
+// Import routes
+const authRoutes = require('./routes/auth.routes');
 
 // Initialize express app
 const app = express();
+
+// Request logging middleware
+if (process.env.NODE_ENV !== 'production') {
+  app.use(morgan('dev'));
+}
 
 // Middleware setup
 // Enable CORS for frontend requests
@@ -20,6 +29,9 @@ app.use(cookieParser());
 app.get('/api/health', (req, res) => {
   res.status(200).json({ status: 'success', message: 'API is running smoothly.' });
 });
+
+// API Routes
+app.use('/api/auth', authRoutes);
 
 // TODO: Import and use core application routes here
 // Example: app.use('/api/products', productRoutes);
