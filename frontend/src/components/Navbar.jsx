@@ -16,7 +16,7 @@ const Navbar = () => {
     { name: 'Home', path: '/' },
     { name: 'Manage Categories', path: '/categories' },
     { name: 'Manage Subcategories', path: '/subcategories' },
-    { name: 'Add Products', path: '/add-products' },
+    { name: 'Add Products', path: '/products/new' },
     { name: 'Wishlist', path: '/wishlist' },
   ];
 

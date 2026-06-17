@@ -6,6 +6,8 @@ import Signup from './pages/Signup';
 import Home from './pages/Home';
 import Categories from './pages/Categories';
 import Subcategories from './pages/Subcategories';
+import ProductForm from './pages/ProductForm';
+import ProductDetails from './pages/ProductDetails';
 
 function App() {
   return (
@@ -35,6 +37,30 @@ function App() {
             element={
               <ProtectedRoute>
                 <Subcategories />
+              </ProtectedRoute>
+            } 
+          />
+          <Route 
+            path="/products/new" 
+            element={
+              <ProtectedRoute>
+                <ProductForm />
+              </ProtectedRoute>
+            } 
+          />
+          <Route 
+            path="/products/edit/:id" 
+            element={
+              <ProtectedRoute>
+                <ProductForm />
+              </ProtectedRoute>
+            } 
+          />
+          <Route 
+            path="/products/:id" 
+            element={
+              <ProtectedRoute>
+                <ProductDetails />
               </ProtectedRoute>
             } 
           />
