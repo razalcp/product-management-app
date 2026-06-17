@@ -1,39 +1,33 @@
 import { useContext } from 'react';
 import { AuthContext } from '../context/AuthContext';
-import { useNavigate, Link } from 'react-router-dom';
 
 const Home = () => {
-  const { user, logout } = useContext(AuthContext);
-  const navigate = useNavigate();
-
-  const handleLogout = async () => {
-    await logout();
-    navigate('/login');
-  };
+  const { user } = useContext(AuthContext);
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center p-6">
-      <div className="bg-white rounded-2xl shadow-xl max-w-md w-full p-8 text-center space-y-6">
-        <h1 className="text-4xl font-bold text-gray-900 tracking-tight">Welcome Home</h1>
-        <p className="text-lg text-gray-600">
-          Hello, <span className="font-semibold text-indigo-600">{user?.name}</span>!
+    <div className="max-w-7xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
+      <div className="mb-8">
+        <h1 className="text-3xl font-bold text-gray-900 tracking-tight">Products</h1>
+        <p className="mt-2 text-sm text-gray-600">
+          Welcome back, <span className="font-semibold text-indigo-600">{user?.name}</span>! Browse our latest products below.
         </p>
-        
-        <div className="flex justify-center pt-2">
-           <Link to="/categories" className="text-indigo-600 hover:text-indigo-800 font-medium bg-indigo-50 hover:bg-indigo-100 px-6 py-2 rounded-lg transition-colors border border-indigo-100">
-              Manage Categories
-           </Link>
-        </div>
+      </div>
 
-        <div className="pt-6 border-t border-gray-100">
-          <p className="text-sm text-gray-500 mb-6">You are securely logged in.</p>
-          <button
-            onClick={handleLogout}
-            className="w-full bg-red-500 hover:bg-red-600 text-white font-medium py-3 px-4 rounded-xl transition-all duration-200 transform hover:scale-[1.02] active:scale-[0.98] shadow-sm"
-          >
-            Log Out
-          </button>
-        </div>
+      {/* Product Listing Placeholder */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+        {[1, 2, 3, 4, 5, 6, 7, 8].map((item) => (
+          <div key={item} className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-md transition-shadow">
+            <div className="h-48 bg-gray-200 animate-pulse"></div>
+            <div className="p-4 space-y-3">
+              <div className="h-4 bg-gray-200 rounded w-3/4 animate-pulse"></div>
+              <div className="h-4 bg-gray-200 rounded w-1/2 animate-pulse"></div>
+              <div className="pt-2 flex justify-between items-center">
+                <div className="h-5 bg-gray-200 rounded w-1/4 animate-pulse"></div>
+                <div className="h-8 bg-gray-200 rounded w-1/3 animate-pulse"></div>
+              </div>
+            </div>
+          </div>
+        ))}
       </div>
     </div>
   );
