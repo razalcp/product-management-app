@@ -18,16 +18,14 @@ const ProductCard = ({ product, onRemoveFromWishlist, isRemoving }) => {
             </svg>
           )}
         </div>
-        <div className="p-4">
-          <div className="flex justify-between items-start">
-            <div>
-              <h3 className="text-sm font-medium text-gray-900 line-clamp-1">{product.name}</h3>
-              <p className="text-xs text-gray-500 mt-1">{product.category?.name}</p>
-            </div>
-            <p className="text-sm font-bold text-indigo-600">
-              ${product.variants && product.variants.length > 0 ? product.variants[0].price.toFixed(2) : '0.00'}
-            </p>
-          </div>
+        <div className="p-4 flex flex-col items-start space-y-1">
+          <h3 className="text-sm font-medium text-gray-900 line-clamp-1" title={product.name}>{product.name}</h3>
+          <p className="text-sm font-bold text-indigo-600">
+            {product.variants && product.variants.length > 0 ? `$${product.variants[0].price.toFixed(2)}` : <span className="text-xs text-gray-400 font-normal">Price Not Available</span>}
+          </p>
+          <p className="text-xs text-gray-500">
+            {product.category?.name || 'Category'} &bull; {product.subCategory?.name || 'Subcategory'}
+          </p>
         </div>
       </Link>
 
