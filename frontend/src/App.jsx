@@ -5,6 +5,7 @@ import Login from './pages/Login';
 import Signup from './pages/Signup';
 import Home from './pages/Home';
 import Categories from './pages/Categories';
+import Subcategories from './pages/Subcategories';
 
 function App() {
   return (
@@ -26,6 +27,14 @@ function App() {
             element={
               <ProtectedRoute>
                 <Categories />
+              </ProtectedRoute>
+            } 
+          />
+          <Route 
+            path="/subcategories" 
+            element={
+              <ProtectedRoute>
+                <Subcategories />
               </ProtectedRoute>
             } 
           />
