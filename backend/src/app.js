@@ -12,6 +12,7 @@ const wishlistRoutes = require('./routes/wishlist.routes');
 
 // Initialize express app
 const app = express();
+app.set('trust proxy', 1); // Essential for secure cookies behind reverse proxies (like Render)
 
 // Request logging middleware
 if (process.env.NODE_ENV !== 'production') {
