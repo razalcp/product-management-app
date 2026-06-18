@@ -4,7 +4,8 @@ const cookieOptions = {
   httpOnly: true,
   secure: process.env.NODE_ENV === 'production',
   sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'strict',
-  maxAge: 30 * 24 * 60 * 60 * 1000 // 30 days
+  maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days\
+   path: '/'
 };
 
 /**
@@ -13,10 +14,10 @@ const cookieOptions = {
 const signup = async (req, res) => {
   try {
     const { user, token } = await authService.signup(req.body);
-    
+
     // Set JWT as HttpOnly cookie
     res.cookie('token', token, cookieOptions);
-    
+
     res.status(201).json({
       success: true,
       message: 'User registered successfully',
@@ -37,10 +38,10 @@ const login = async (req, res) => {
   try {
     const { email, password } = req.body;
     const { user, token } = await authService.login(email, password);
-    
+
     // Set JWT as HttpOnly cookie
     res.cookie('token', token, cookieOptions);
-    
+
     res.status(200).json({
       success: true,
       message: 'Logged in successfully',
@@ -62,6 +63,7 @@ const logout = (req, res) => {
     httpOnly: true,
     secure: process.env.NODE_ENV === 'production',
     sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'strict',
+    path: '/'
   });
   res.status(200).json({
     success: true,
